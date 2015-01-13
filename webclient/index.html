@@ -1,0 +1,80 @@
+<html>
+<head>
+    <title>pixi.js example 1</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #000000;
+        }
+    </style>
+    <script src="js/lib/pixi.js"></script>
+    <script src="js/lib/keypress-2.1.0.min.js"></script>
+    <script src ="http://coffeescript.org/extras/coffee-script.js"></script>
+</head>
+<body>
+<canvas id="myView" width="640" height="480"></canvas>
+
+<script src="js/cell.js"></script>
+<script src="js/hexGrid.js"></script>
+<script src="js/agent.js"></script>
+
+<script type="text/coffeescript">
+
+    stage = new PIXI.Stage 0x661199
+
+    renderer = PIXI.autoDetectRenderer 800, 800
+    document.body.appendChild renderer.view
+
+
+    @grid_width = 10
+    @grid_height = 10
+#    @grid = new PIXI.DisplayObjectContainer()
+    @grid = new window.HexGrid 10, 10
+    stage.addChild @grid.container
+
+
+
+#    texture = PIXI.Texture.fromImage "png/block.png"
+
+#    @cells = [0...10].map (x)->
+#        [0...10].map (y) ->
+#            new window.Cell x, y, 'magic', @grid
+
+    flyTexture = PIXI.Texture.fromImage "png/enemies/fly_normal.png"
+    @agent = new window.Agent flyTexture
+    @ax = 5
+    @ay = 5
+    @grid.cells[@ax][@ay].add @agent
+
+
+    check_bounds = (x,y) ->
+        x>=0 && x<@grid_width && y>=0 && y<@grid_height
+    step = (dx, dy)->
+        nx = @ax + dx
+        ny = @ay + dy
+        if check_bounds(nx, ny)
+            @grid.cells[@ax][@ay].clear()
+            @ax = nx
+            @ay = ny
+            @grid.cells[@ax][@ay].add @agent
+
+    @listener = new window.keypress.Listener()
+    @listener.simple_combo "up",   ()-> step(0, -1)
+    @listener.simple_combo "down", ()-> step(0, 1)
+    @listener.simple_combo "left",   ()-> step(-1, 0)
+    @listener.simple_combo "right",  ()-> step(1, 0)
+
+
+    animate = ()->
+#        @block.rotation += 0.1
+        @agent.tick()
+        renderer.render stage
+        requestAnimFrame animate
+
+    requestAnimFrame animate
+
+</script>
+
+</body>
+</html>
