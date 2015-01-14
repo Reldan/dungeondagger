@@ -2,7 +2,7 @@ package dungeondagger
 
 import com.badlogic.gdx.{Game, Screen}
 
-case class DefaultScreen(game: Game) extends Screen {
+class DefaultScreen(val game: Game) extends Screen {
   override def render(delta: Float): Unit = {}
 
   override def hide(): Unit = {}

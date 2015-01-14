@@ -52,6 +52,17 @@ object Settings {
     Tasks.assembly
   )
 
+  lazy val webserver = core ++ Seq(
+    resolvers += "Spray" at "http://repo.spray.io",
+    resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+
+    libraryDependencies ++= Seq(
+      "com.wandoulabs.akka" %% "spray-websocket" % "0.1.3",
+      "com.typesafe.akka" %% "akka-actor" % "2.3.8",
+      "io.spray" %% "spray-routing" % "1.3.1",
+      "io.spray" %% "spray-can" % "1.3.1")
+  )
+
 }
 
 object Tasks {
@@ -131,10 +142,16 @@ object LibgdxBuild extends Build {
     settings = Settings.desktop
   ).dependsOn(core)
 
+  lazy val webserver = Project(
+    id       = "webserver",
+    base     = file("webserver"),
+    settings = Settings.webserver
+  )
+
   lazy val all = Project(
     id       = "all-platforms",
     base     = file("."),
     settings = Settings.core
-  ).aggregate(core, desktop)
+  ).aggregate(core, desktop, webserver)
 }
 
