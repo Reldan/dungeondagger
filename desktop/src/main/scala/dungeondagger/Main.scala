@@ -7,6 +7,6 @@ object Main extends App {
   cfg.title = "Dungeon dagger"
   cfg.height = 800
   cfg.width = 1200
-  cfg.forceExit = false
+  cfg.forceExit = true
   new LwjglApplication(new DungeonDagger, cfg)
 }

@@ -8,10 +8,13 @@ import scala.util.Random
 
 class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   var batch: SpriteBatch = new SpriteBatch()
-  def path(hexName: String) = s"data/hexagonTiles/Tiles/tile$hexName.png"
+  def path(hexName: String) =
+    s"data/hexagonTiles/Tiles/tile$hexName.png"
+
+  println(Gdx.files.getExternalStoragePath)
   val textures = List("Autumn", "Grass", "Lava", "Dirt", "Magic", "Rock", "Sand", "Stone", "Water")
     .map(path)
-    .map(Gdx.files.internal)
+    .map(Gdx.files.local)
     .map(new Texture(_))
     .toArray
 
