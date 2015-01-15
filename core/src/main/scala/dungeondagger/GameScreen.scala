@@ -14,7 +14,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     s"data/hexagonTiles/Tiles/tile$hexName.png"
 
   println(Gdx.files.getExternalStoragePath)
-  val textures = List("Autumn", "Grass", "Lava", "Dirt", "Magic", "Rock", "Sand", "Stone", "Water")
+  val textures = List("Water", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
     .map(path)
     .map(Gdx.files.local)
     .map(new Texture(_))
@@ -23,11 +23,12 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   Gdx.input.setInputProcessor(this)
 
   val rand = new Random()
+  var gen = Generator.newGen()
 
   val Height = 15
   val Width = 18
 
-  val map: Array[Int] = Array.fill(Height * Width){ rand.nextInt(6)}
+  var map: Array[Int] = Generator.terrain(Width, Height, textures.size - 1, gen)
 
   var person = 0
   val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
@@ -51,7 +52,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     }
   }
 
-  val tileActors = Range(0, Height).map{ i =>
+  def tActors = Range(0, Height).map{ i =>
     Range(0, Width).map { j =>
       val tileId = i * Width + j
       val t = textures(map(tileId))
@@ -61,6 +62,9 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
       tile
     }
   }.flatten
+
+
+  var tileActors = tActors
 
   tileActors.reverse foreach stage.addActor
 
@@ -109,6 +113,12 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
       case(Input.Keys.DOWN) if person - Width >= 0 => movePerson(person - Width)
       case(Input.Keys.RIGHT) if person % Width != Width - 1 => movePerson(person + 1)
       case(Input.Keys.LEFT) if person % Width != 0 => movePerson(person - 1)
+      case(Input.Keys.R) =>
+        gen = Generator.newGen()
+        map = Generator.terrain(Width, Height, textures.size - 1, gen)
+        tileActors = tActors
+        stage.clear()
+        tileActors.reverse foreach stage.addActor
       case _ => wobble()
     }
     true
