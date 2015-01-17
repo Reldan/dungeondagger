@@ -13,12 +13,20 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   def path(hexName: String) =
     s"data/hexagonTiles/Tiles/tile$hexName.png"
 
+  def flowersPath(color: String) =
+    s"data/hexagonTiles/Tiles/flower$color.png"
+
   println(Gdx.files.getExternalStoragePath)
-  val textures = List("Water", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
+  val textures = Array("Water", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
     .map(path)
     .map(Gdx.files.local)
     .map(new Texture(_))
-    .toArray
+
+  val flowers = Array("Blue", "Red", "Green", "Red", "White", "Yellow")
+    .map(flowersPath)
+    .map(Gdx.files.local)
+    .map(new Texture(_))
+
 
   Gdx.input.setInputProcessor(this)
 
@@ -44,8 +52,12 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   class HexTile(texture: Texture) extends Actor {
     var started = false
     var hasPerson = false
+    val flower = rand.nextInt(10) == 0
+    val flowerTexture = flowers(rand.nextInt(flowers.size))
     override def draw(batch:Batch, alpha:Float){
       batch.draw(texture,getX,getY)
+      if (flower)
+        batch.draw(flowerTexture, getX + 35, getY + 35)
       if (hasPerson) {
         batch.draw(personTexture, getX, getY + 35)
       }
