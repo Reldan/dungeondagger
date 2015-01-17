@@ -16,6 +16,9 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   def flowersPath(color: String) =
     s"data/hexagonTiles/Tiles/flower$color.png"
 
+  def treePath(treeType: String) =
+    s"data/hexagonTiles/Tiles/tree$treeType.png"
+
   println(Gdx.files.getExternalStoragePath)
   val textures = Array("Water", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
     .map(path)
@@ -24,6 +27,14 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   val flowers = Array("Blue", "Red", "Green", "Red", "White", "Yellow")
     .map(flowersPath)
+    .map(Gdx.files.local)
+    .map(new Texture(_))
+
+ val trees = Array("Autumn_high", "Autumn_low", "Autumn_mid",
+   "Blue_high", "Blue_low", "Blue_mid",
+   "Cactus_1", "Cactus_2", "Cactus_3",
+   "Green_high", "Green_low", "Green_mid")
+    .map(treePath)
     .map(Gdx.files.local)
     .map(new Texture(_))
 
@@ -54,10 +65,14 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     var hasPerson = false
     val flower = rand.nextInt(10) == 0
     val flowerTexture = flowers(rand.nextInt(flowers.size))
+    val tree = !flower && rand.nextInt(15) == 0
+    val treeTexture = trees(rand.nextInt(trees.size))
     override def draw(batch:Batch, alpha:Float){
       batch.draw(texture,getX,getY)
       if (flower)
         batch.draw(flowerTexture, getX + 35, getY + 35)
+      if (tree)
+        batch.draw(treeTexture, getX + 35, getY + 35)
       if (hasPerson) {
         batch.draw(personTexture, getX, getY + 35)
       }
