@@ -30,10 +30,10 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     .map(Gdx.files.local)
     .map(new Texture(_))
 
- val trees = Array("Autumn_high", "Autumn_low", "Autumn_mid",
-   "Blue_high", "Blue_low", "Blue_mid",
-   "Cactus_1", "Cactus_2", "Cactus_3",
-   "Green_high", "Green_low", "Green_mid")
+  val trees = Array("Autumn_high", "Autumn_low", "Autumn_mid",
+    "Blue_high", "Blue_low", "Blue_mid",
+    "Cactus_1", "Cactus_2", "Cactus_3",
+    "Green_high", "Green_low", "Green_mid")
     .map(treePath)
     .map(Gdx.files.local)
     .map(new Texture(_))
@@ -44,8 +44,8 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   val rand = new Random()
   var gen = Generator.newGen()
 
-  val Height = 15
-  val Width = 18
+  val Height = 150
+  val Width = 180
 
   var map: Array[Int] = Generator.terrain(Width, Height, textures.size - 1, gen)
 
@@ -100,11 +100,16 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   def movePerson(toTileId: Int): Unit ={
     tileActors(person).hasPerson = false
     person = toTileId
-    tileActors(person).hasPerson = true
+    val newTile = tileActors(person)
+    newTile.hasPerson = true
+    stage.getViewport.apply(false)
+    stage.getViewport.getCamera.position.set(newTile.getX, newTile.getY + 35, 0)
   }
 
+  movePerson((tileActors.size + Width ) / 2)
+
   def wobble(): Unit ={
-    val center = tileActors(tileActors.size / 2)
+    val center = tileActors(person)
     tileActors foreach { a =>
       val dx = center.getX - a.getX
       val dy = center.getY - a.getY
