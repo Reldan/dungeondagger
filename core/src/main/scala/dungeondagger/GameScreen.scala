@@ -42,16 +42,11 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   Gdx.input.setInputProcessor(this)
 
   val rand = new Random()
-  var gen = Generator.newGen()
 
-  val Height = 150
-  val Width = 180
+  val world = new World()
+  def w = world.width
+  def h = world.height
 
-  def generateMap = Generator.terrain(Width, Height, textures.size - 1, gen).map{
-    Terrains.All
-  }
-
-  var map: Array[Terrain] = generateMap
 
   var person = 0
   val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
@@ -92,10 +87,10 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     }
   }
 
-  def tActors = Range(0, Height).map{ i =>
-    Range(0, Width).map { j =>
-      val tileId = i * Width + j
-      val terrain = map(tileId)
+  def tActors = Range(0, w).map{ i =>
+    Range(0, h).map { j =>
+      val tileId = i * w + j
+      val terrain = world.map(tileId)
       val t = textures(terrain.id)
       val x = j * 65 + (i % 2) * 32
       val tile = new HexTile(t, terrain)
@@ -120,7 +115,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     stage.getViewport.getCamera.position.set(newTile.getX, newTile.getY + 35, 0)
   }
 
-  movePerson((tileActors.size + Width ) / 2)
+  movePerson((tileActors.size + w ) / 2)
 
   def wobble(): Unit ={
     val center = tileActors(person)
@@ -153,17 +148,15 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     stage.draw()
   }
 
-  private def canPass(newPosition: Int) = map(newPosition).passThrough
 
   override def keyDown(keycode: Int): Boolean = {
     keycode match {
-      case(Input.Keys.UP) if person + Width < Height * Width && (canPass(person + Width) || !canPass(person)) => movePerson(person + Width)
-      case(Input.Keys.DOWN) if person - Width >= 0 && (canPass(person - Width)|| !canPass(person)) => movePerson(person - Width)
-      case(Input.Keys.RIGHT) if person % Width != Width - 1 && (canPass(person + 1)|| !canPass(person)) => movePerson(person + 1)
-      case(Input.Keys.LEFT) if person % Width != 0  && (canPass(person - 1)|| !canPass(person)) => movePerson(person - 1)
+      case(Input.Keys.UP) if person + w < h * w && (world.canPass(person + w) || !world.canPass(person)) => movePerson(person + w)
+      case(Input.Keys.DOWN) if person - w >= 0 && (world.canPass(person - w)|| !world.canPass(person)) => movePerson(person - w)
+      case(Input.Keys.RIGHT) if person % w != w - 1 && (world.canPass(person + 1)|| !world.canPass(person)) => movePerson(person + 1)
+      case(Input.Keys.LEFT) if person % w != 0  && (world.canPass(person - 1)|| !world.canPass(person)) => movePerson(person - 1)
       case(Input.Keys.R) =>
-        gen = Generator.newGen()
-        map = generateMap
+        world.regenerateMap()
         tileActors = tActors
         stage.clear()
         tileActors.reverse foreach stage.addActor

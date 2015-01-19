@@ -19,16 +19,13 @@ object Generator {
   }
 
 
-  def terrain(width: Int, height: Int, depth: Int, gen: ModuleFractal): Array[Int] = {
-    val data = Array.fill(width * height)(0)
-    for (x ← 0 until width; y ← 0 until height) {
-//         println(gen.get(x, y))
-         val opt = Math.abs(((gen.get(x, y) + 1) * depth).toInt)
-//         println(opt)
-         data(y * width + x) = Math.min(opt, depth)
-      }
-    data
-  }
+  def terrain(width: Int, height: Int, depth: Int, gen: ModuleFractal): Array[Int] =
+    Array.tabulate(width * height) { i =>
+      val y = i / width
+      val x = i % width
+      val opt = Math.abs(((gen.get(x, y) + 1) * depth).toInt)
+      Math.min(opt, depth)
+    }
 
   def main(args: Array[String]) = {
     val gen = newGen()
