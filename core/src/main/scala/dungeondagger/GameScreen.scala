@@ -7,6 +7,7 @@ import com.badlogic.gdx.math.Interpolation
 import com.badlogic.gdx.scenes.scene2d.actions.{DelayAction, SequenceAction, MoveByAction}
 import com.badlogic.gdx.scenes.scene2d.{Actor, Stage}
 
+import scala.collection.mutable
 import scala.util.Random
 
 class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
@@ -43,12 +44,12 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   val rand = new Random()
 
-  val world = new World()
+  val person = new PlayerAgent()
+  var personPos = (151 * 150) / 2
+  val world = new World(width = 150, height = 150, agents = mutable.Map(person -> personPos))
   def w = world.width
   def h = world.height
 
-
-  var person = 0
   val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
 //  val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
@@ -107,18 +108,18 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   tileActors(0).hasPerson = true
 
   def movePerson(toTileId: Int): Unit ={
-    tileActors(person).hasPerson = false
-    person = toTileId
-    val newTile = tileActors(person)
+    tileActors(personPos).hasPerson = false
+    personPos = toTileId
+    val newTile = tileActors(personPos)
     newTile.hasPerson = true
     stage.getViewport.apply(false)
     stage.getViewport.getCamera.position.set(newTile.getX, newTile.getY + 35, 0)
   }
 
-  movePerson((tileActors.size + w ) / 2)
+  movePerson(personPos)
 
   def wobble(): Unit ={
-    val center = tileActors(person)
+    val center = tileActors(personPos)
     tileActors foreach { a =>
       val dx = center.getX - a.getX
       val dy = center.getY - a.getY
@@ -140,6 +141,13 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     }
   }
 
+  def processWorldEvents():Unit = {
+    world.step() foreach {
+      case AgentMoved(a, to) => movePerson(to)
+      case _ =>
+    }
+  }
+
   override def render(delta: Float) {
     Gdx.gl.glClearColor(1, 1, 1, 1)
     Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
@@ -151,10 +159,10 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   override def keyDown(keycode: Int): Boolean = {
     keycode match {
-      case(Input.Keys.UP) if person + w < h * w && (world.canPass(person + w) || !world.canPass(person)) => movePerson(person + w)
-      case(Input.Keys.DOWN) if person - w >= 0 && (world.canPass(person - w)|| !world.canPass(person)) => movePerson(person - w)
-      case(Input.Keys.RIGHT) if person % w != w - 1 && (world.canPass(person + 1)|| !world.canPass(person)) => movePerson(person + 1)
-      case(Input.Keys.LEFT) if person % w != 0  && (world.canPass(person - 1)|| !world.canPass(person)) => movePerson(person - 1)
+      case(Input.Keys.UP) => person.go(0)
+      case(Input.Keys.DOWN) => person.go(2)
+      case(Input.Keys.RIGHT) => person.go(1)
+      case(Input.Keys.LEFT) => person.go(3)
       case(Input.Keys.R) =>
         world.regenerateMap()
         tileActors = tActors
@@ -162,6 +170,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
         tileActors.reverse foreach stage.addActor
       case _ => wobble()
     }
+    processWorldEvents()
     true
   }
 
