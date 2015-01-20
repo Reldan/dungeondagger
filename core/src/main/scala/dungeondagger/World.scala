@@ -1,6 +1,5 @@
 package dungeondagger
 
-//import scala.collection.mutable
 import scala.util.Random
 
 
@@ -15,7 +14,7 @@ case class World(height: Int = 150, width: Int = 150) {
 
   var agentStates = Vector.empty[AgentState]
 
-  def addAgent(agent:Agent, position:Int = rand.nextInt(map.size)): Unit = {
+  def addAgent(agent: Agent, position: Int = rand.nextInt(map.size)): Unit = {
     agentStates = new AgentState(agent, position) +: agentStates
   }
 
@@ -38,15 +37,23 @@ case class World(height: Int = 150, width: Int = 150) {
 
   def canPass(newPosition: Int) = map(newPosition).passThrough
 
+  val dirToDXY = Map(
+    0 ->(0, 1),
+    1 ->(1, 0),
+    2 ->(+1, -1),
+    3 ->(0, -1),
+    4 ->(-1, 0),
+    5 ->(-1, 1)
+  )
+
   def applyDirectionToPosition(pos: Int, dir: Int): Option[Int] = {
-    //    val d = pos % 2
-    dir match {
-      case 0 if pos + width < height * width && (canPass(pos + width) || !canPass(pos)) => Some(pos + width)
-      case 1 if pos % width != width - 1 && (canPass(pos + 1) || !canPass(pos)) => Some(pos + 1)
-      case 2 if pos - width >= 0 && (canPass(pos - width) || !canPass(pos)) => Some(pos - width)
-      case 3 if pos % width != 0 && (canPass(pos - 1) || !canPass(pos)) => Some(pos - 1)
-      case _ => None
-    }
+    val (dx, dy) = dirToDXY(dir)
+    val y = pos / width
+    val x = pos % width
+    val destination = width * (y + dy) + x + dx
+    if (destination < 0 || destination >= map.size || ((x == width - 1) && dx > 0) || (canPass(pos) && !canPass(destination))) {
+      None
+    } else Some(destination)
   }
 
   def step(): Set[Event] = {

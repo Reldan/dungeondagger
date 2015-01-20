@@ -50,7 +50,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   def w = world.width
   def h = world.height
   world.addAgent(person, personPos)
-  (0 to 500).foreach{_ => world.addAgent(new RandomFrogAgent(world))}
+  (0 to 500).foreach { _ => world.addAgent(new RandomFrogAgent(world))}
 
   val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
   val frogTexture = new Texture(Gdx.files.internal("data/hexagonTiles/frog.png"))
@@ -58,13 +58,14 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val fishTexture = new Texture(Gdx.files.internal("data/hexagonTiles/fish.png"))
   val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
-  val agentSprites = Map(AgentKind.Player -> new Sprite(personTexture),
-                         AgentKind.Frog   -> new Sprite(frogTexture))
+  val agentSprites = Map(
+    AgentKind.Player -> new Sprite(personTexture),
+    AgentKind.Frog -> new Sprite(frogTexture))
 
   Gdx.graphics.setContinuousRendering(false)
   Gdx.graphics.requestRendering()
 
-  val stage:Stage = new Stage()
+  val stage: Stage = new Stage()
 
   override def dispose() {
     stage.dispose()
@@ -73,28 +74,28 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   }
 
   class HexTile(texture: Texture, val terrain: Terrain) extends Actor {
-    case class Decoration(texture:Texture, dx: Int, dy:Int, w:Int, h:Int)
+    case class Decoration(texture: Texture, dx: Int, dy: Int, w: Int, h: Int)
 
     var started = false
-    var agent : Option[AgentKind.Value] = None
+    var agent: Option[AgentKind.Value] = None
 
     val decorations = mutable.MutableList.empty[Decoration]
 
-    if(terrain != Terrains.Water && rand.nextInt(10) == 0){
+    if (terrain != Terrains.Water && rand.nextInt(10) == 0) {
       val flowerTexture = flowers(rand.nextInt(flowers.size))
       Decoration(flowerTexture, 35, 0, 0, 0) +=: decorations
-    } else if(terrain != Terrains.Water && rand.nextInt(15) == 0){
+    } else if (terrain != Terrains.Water && rand.nextInt(15) == 0) {
       val treeTexture = trees(rand.nextInt(trees.size))
       Decoration(treeTexture, 35, 0, 0, 0) +=: decorations
-    } else if(terrain == Terrains.Grass && rand.nextInt(300) == 0){
+    } else if (terrain == Terrains.Grass && rand.nextInt(300) == 0) {
       Decoration(campfireTexture, 10, 0, 50, 50) +=: decorations
-    } else if(terrain == Terrains.Water && rand.nextInt(10) == 0){
+    } else if (terrain == Terrains.Water && rand.nextInt(10) == 0) {
       Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
     }
 
-    override def draw(batch:Batch, alpha:Float){
+    override def draw(batch: Batch, alpha: Float) {
       Range(0, terrain.height + 1).foreach { i =>
-        batch.draw(texture, getX, getY + i * 24 )
+        batch.draw(texture, getX, getY + i * 24)
       }
       val attrY = getY + terrain.height * 24 + 35
       decorations.foreach {
@@ -102,18 +103,20 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
         case Decoration(tex, dx, dy, w, h) => batch.draw(tex, getX + dx, attrY + dy, w, h)
       }
 
-      agent map agentSprites map {batch.draw(_, getX, attrY)}
+      agent map agentSprites map {
+        batch.draw(_, getX, attrY)
+      }
     }
   }
 
-  def tActors = Range(0, w).map{ i =>
+  def tActors = Range(0, w).map { i =>
     Range(0, h).map { j =>
       val tileId = i * w + j
       val terrain = world.map(tileId)
       val t = textures(terrain.id)
-      val x = j * 65 + (i % 2) * 32
+      val x = j * 65 + i * 32
       val tile = new HexTile(t, terrain)
-      tile.setPosition(x,i * 49)
+      tile.setPosition(x, i * 49)
       tile
     }
   }.flatten
@@ -132,20 +135,19 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     newTile
   }
 
-  def movePerson(from: Int, to: Int): Unit ={
+  def movePerson(from: Int, to: Int): Unit = {
     personPos = to
     val centerTile = moveAgent(AgentKind.Player, from, to)
     stage.getViewport.getCamera.position.set(centerTile.getX, centerTile.getY + 35, 0)
   }
   movePerson(0, personPos)
 
-  def wobble(): Unit ={
+  def wobble(): Unit = {
     val center = tileActors(personPos)
     tileActors foreach { a =>
       val dx = center.getX - a.getX
       val dy = center.getY - a.getY
       val r2 = dx * dx + dy * dy
-//      val r = Math.sqrt(r2).toFloat
       val there = new MoveByAction()
       val back = new MoveByAction()
       there.setDuration(1.7f)
@@ -157,12 +159,12 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
       val h = 10000000 / (50000 + r2)
       there.setAmountY(h)
       back.setAmountY(-h)
-      val action = new SequenceAction(delay,there,back)
+      val action = new SequenceAction(delay, there, back)
       a.addAction(action)
     }
   }
 
-  def processWorldEvents():Unit = {
+  def processWorldEvents(): Unit = {
     world.step() foreach {
       case AgentMoved(a, from, to) if a == person => movePerson(from, to)
       case AgentMoved(a, from, to) => moveAgent(a.kind, from, to)
@@ -181,17 +183,19 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   override def keyDown(keycode: Int): Boolean = {
     keycode match {
-      case(Input.Keys.ESCAPE) => System.exit(0)
-      case(Input.Keys.UP) => person.go(0)
-      case(Input.Keys.DOWN) => person.go(2)
-      case(Input.Keys.RIGHT) => person.go(1)
-      case(Input.Keys.LEFT) => person.go(3)
-      case(Input.Keys.R) =>
+      case (Input.Keys.ESCAPE) => System.exit(0)
+      case (Input.Keys.UP | Input.Keys.NUMPAD_8 | Input.Keys.NUMPAD_9) => person.go(0)
+      case (Input.Keys.RIGHT | Input.Keys.NUMPAD_6) => person.go(1)
+      case (Input.Keys.NUMPAD_3) => person.go(2)
+      case (Input.Keys.DOWN | Input.Keys.NUMPAD_2 | Input.Keys.NUMPAD_1) => person.go(3)
+      case (Input.Keys.LEFT | Input.Keys.NUMPAD_4) => person.go(4)
+      case (Input.Keys.NUMPAD_7) => person.go(5)
+      case (Input.Keys.R) =>
         world.regenerateMap()
         tileActors = tActors
         stage.clear()
         tileActors.reverse foreach stage.addActor
-      case(Input.Keys.W) => wobble()
+      case (Input.Keys.W) => wobble()
       case _ =>
     }
     processWorldEvents()
