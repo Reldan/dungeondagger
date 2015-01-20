@@ -54,6 +54,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 //  val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val fishTexture = new Texture(Gdx.files.internal("data/hexagonTiles/fish.png"))
+  val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
   val personSprite = new Sprite(personTexture)
   personSprite.setAlpha(1)
 
@@ -73,6 +74,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     val tree = (terrain != Terrains.Water) && !flower && rand.nextInt(15) == 0
     val treeTexture = trees(rand.nextInt(trees.size))
     val fish = terrain == Terrains.Water && rand.nextInt(10) == 0
+    val campfire = terrain == Terrains.Grass && !flower && !tree && rand.nextInt(300) == 0
 
     override def draw(batch:Batch, alpha:Float){
       Range(0, terrain.height + 1).foreach { i =>
@@ -85,6 +87,8 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
         batch.draw(treeTexture, getX + 35, attrY)
       if (fish)
         batch.draw(fishTexture, getX + 10, attrY, 40, 40)
+      if (campfire)
+        batch.draw(campfireTexture, getX + 10, attrY, 50, 50)
       if (hasPerson)
         batch.draw(personSprite, getX, attrY)
 
