@@ -61,6 +61,9 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   val agentSprites = Map(AgentKind.Player -> new Sprite(personTexture),
                          AgentKind.Frog   -> new Sprite(frogTexture))
 
+  Gdx.graphics.setContinuousRendering(false)
+  Gdx.graphics.requestRendering()
+
   val stage:Stage = new Stage()
 
   override def dispose() {
