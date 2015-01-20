@@ -46,17 +46,20 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   val person = new PlayerAgent()
   var personPos = (151 * 150) / 2
-  val world = new World(width = 150, height = 150, agents = mutable.Map(person -> personPos))
+  val world = new World(width = 150, height = 150)
   def w = world.width
   def h = world.height
+  world.addAgent(person, personPos)
+  (0 to 500).foreach{_ => world.addAgent(new RandomFrogAgent(world))}
 
   val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
+  val frogTexture = new Texture(Gdx.files.internal("data/hexagonTiles/frog.png"))
 //  val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val fishTexture = new Texture(Gdx.files.internal("data/hexagonTiles/fish.png"))
   val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
-  val personSprite = new Sprite(personTexture)
-  personSprite.setAlpha(1)
+  val agentSprites = Map(AgentKind.Player -> new Sprite(personTexture),
+                         AgentKind.Frog   -> new Sprite(frogTexture))
 
   val stage:Stage = new Stage()
 
@@ -67,31 +70,36 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   }
 
   class HexTile(texture: Texture, val terrain: Terrain) extends Actor {
+    case class Decoration(texture:Texture, dx: Int, dy:Int, w:Int, h:Int)
+
     var started = false
-    var hasPerson = false
-    val flower = (terrain != Terrains.Water) && rand.nextInt(10) == 0
-    val flowerTexture = flowers(rand.nextInt(flowers.size))
-    val tree = (terrain != Terrains.Water) && !flower && rand.nextInt(15) == 0
-    val treeTexture = trees(rand.nextInt(trees.size))
-    val fish = terrain == Terrains.Water && rand.nextInt(10) == 0
-    val campfire = terrain == Terrains.Grass && !flower && !tree && rand.nextInt(300) == 0
+    var agent : Option[AgentKind.Value] = None
+
+    val decorations = mutable.MutableList.empty[Decoration]
+
+    if(terrain != Terrains.Water && rand.nextInt(10) == 0){
+      val flowerTexture = flowers(rand.nextInt(flowers.size))
+      Decoration(flowerTexture, 35, 0, 0, 0) +=: decorations
+    } else if(terrain != Terrains.Water && rand.nextInt(15) == 0){
+      val treeTexture = trees(rand.nextInt(trees.size))
+      Decoration(treeTexture, 35, 0, 0, 0) +=: decorations
+    } else if(terrain == Terrains.Grass && rand.nextInt(300) == 0){
+      Decoration(campfireTexture, 10, 0, 50, 50) +=: decorations
+    } else if(terrain == Terrains.Water && rand.nextInt(10) == 0){
+      Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
+    }
 
     override def draw(batch:Batch, alpha:Float){
       Range(0, terrain.height + 1).foreach { i =>
         batch.draw(texture, getX, getY + i * 24 )
       }
       val attrY = getY + terrain.height * 24 + 35
-      if (flower)
-        batch.draw(flowerTexture, getX + 35, attrY)
-      if (tree)
-        batch.draw(treeTexture, getX + 35, attrY)
-      if (fish)
-        batch.draw(fishTexture, getX + 10, attrY, 40, 40)
-      if (campfire)
-        batch.draw(campfireTexture, getX + 10, attrY, 50, 50)
-      if (hasPerson)
-        batch.draw(personSprite, getX, attrY)
+      decorations.foreach {
+        case Decoration(tex, dx, dy, 0, 0) => batch.draw(tex, getX + dx, attrY + dy)
+        case Decoration(tex, dx, dy, w, h) => batch.draw(tex, getX + dx, attrY + dy, w, h)
+      }
 
+      agent map agentSprites map {batch.draw(_, getX, attrY)}
     }
   }
 
@@ -112,18 +120,21 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   tileActors.reverse foreach stage.addActor
 
-  tileActors(0).hasPerson = true
+  tileActors(0).agent = Some(AgentKind.Player)
 
-  def movePerson(toTileId: Int): Unit ={
-    tileActors(personPos).hasPerson = false
-    personPos = toTileId
-    val newTile = tileActors(personPos)
-    newTile.hasPerson = true
-    stage.getViewport.apply(false)
-    stage.getViewport.getCamera.position.set(newTile.getX, newTile.getY + 35, 0)
+  def moveAgent(kind: AgentKind.Value, from: Int, to: Int): Actor = {
+    tileActors(from).agent = None
+    val newTile = tileActors(to)
+    newTile.agent = Some(kind)
+    newTile
   }
 
-  movePerson(personPos)
+  def movePerson(from: Int, to: Int): Unit ={
+    personPos = to
+    val centerTile = moveAgent(AgentKind.Player, from, to)
+    stage.getViewport.getCamera.position.set(centerTile.getX, centerTile.getY + 35, 0)
+  }
+  movePerson(0, personPos)
 
   def wobble(): Unit ={
     val center = tileActors(personPos)
@@ -150,7 +161,8 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   def processWorldEvents():Unit = {
     world.step() foreach {
-      case AgentMoved(a, to) => movePerson(to)
+      case AgentMoved(a, from, to) if a == person => movePerson(from, to)
+      case AgentMoved(a, from, to) => moveAgent(a.kind, from, to)
       case _ =>
     }
   }

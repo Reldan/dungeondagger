@@ -1,9 +1,6 @@
 package dungeondagger
 
-/**
- * Created by etsvigun on 20/01/15.
- */
-class PlayerAgent extends Agent{
+class PlayerAgent extends Agent(AgentKind.Player){
   var nextDirection: Option[Byte] = None
 
   override def act: Option[Action] = {

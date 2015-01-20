@@ -1,15 +1,23 @@
 package dungeondagger
 
-import scala.collection.mutable
+//import scala.collection.mutable
 import scala.util.Random
 
 
 trait Event
 
-case class AgentMoved(agent: Agent, to: Int) extends Event
+case class AgentMoved(agent: Agent, from: Int, to: Int) extends Event
 
 
-case class World(height: Int = 150, width: Int = 150, agents: mutable.Map[Agent, Int] = mutable.Map.empty[Agent, Int]) {
+case class World(height: Int = 150, width: Int = 150) {
+
+  case class AgentState(agent: Agent, var position: Int)
+
+  var agentStates = Vector.empty[AgentState]
+
+  def addAgent(agent:Agent, position:Int = rand.nextInt(map.size)): Unit = {
+    agentStates = new AgentState(agent, position) +: agentStates
+  }
 
   //  class Cell(val terrain: Terrain = Terrains.Grass,
   //             val agents: Vector[Agent] = Vector.empty[Agent])
@@ -30,7 +38,6 @@ case class World(height: Int = 150, width: Int = 150, agents: mutable.Map[Agent,
 
   def canPass(newPosition: Int) = map(newPosition).passThrough
 
-
   def applyDirectionToPosition(pos: Int, dir: Int): Option[Int] = {
     //    val d = pos % 2
     dir match {
@@ -43,14 +50,14 @@ case class World(height: Int = 150, width: Int = 150, agents: mutable.Map[Agent,
   }
 
   def step(): Set[Event] = {
-    agents.map {
-      case (agent: Agent, pos: Int) =>
-        agent.act.map { action => (agent, action)}.flatMap {
+    agentStates.map {
+      case s@AgentState(agent, pos) =>
+        agent.act.map { action => (s.agent, action)}.flatMap {
           case (actor, Move(a, dir)) =>
             applyDirectionToPosition(pos, dir).map {
               case nextPosition =>
-                agents(a) = nextPosition
-                AgentMoved(a, nextPosition)
+                s.position = nextPosition
+                AgentMoved(a, pos, nextPosition)
             }
         }
     }.flatten.toSet
