@@ -75,15 +75,18 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     val fish = terrain == Terrains.Water && rand.nextInt(10) == 0
 
     override def draw(batch:Batch, alpha:Float){
-      batch.draw(texture,getX,getY)
+      Range(0, terrain.height + 1).foreach { i =>
+        batch.draw(texture, getX, getY + i * 24 )
+      }
+      val attrY = getY + terrain.height * 24 + 35
       if (flower)
-        batch.draw(flowerTexture, getX + 35, getY + 35)
+        batch.draw(flowerTexture, getX + 35, attrY)
       if (tree)
-        batch.draw(treeTexture, getX + 35, getY + 35)
+        batch.draw(treeTexture, getX + 35, attrY)
       if (fish)
-        batch.draw(fishTexture, getX + 10, getY + 35, 40, 40)
+        batch.draw(fishTexture, getX + 10, attrY, 40, 40)
       if (hasPerson)
-        batch.draw(personSprite, getX, getY + 35)
+        batch.draw(personSprite, getX, attrY)
 
     }
   }
@@ -159,6 +162,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   override def keyDown(keycode: Int): Boolean = {
     keycode match {
+      case(Input.Keys.ESCAPE) => System.exit(0)
       case(Input.Keys.UP) => person.go(0)
       case(Input.Keys.DOWN) => person.go(2)
       case(Input.Keys.RIGHT) => person.go(1)
@@ -168,7 +172,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
         tileActors = tActors
         stage.clear()
         tileActors.reverse foreach stage.addActor
-      case _ => wobble()
+      case(Input.Keys.W) => wobble()
     }
     processWorldEvents()
     true

@@ -9,10 +9,7 @@ trait Event
 case class AgentMoved(agent: Agent, to: Int) extends Event
 
 
-class World(
-             val height: Int = 150,
-             val width: Int = 150,
-             val agents: mutable.Map[Agent, Int] = mutable.Map.empty[Agent, Int]) {
+case class World(height: Int = 150, width: Int = 150, agents: mutable.Map[Agent, Int] = mutable.Map.empty[Agent, Int]) {
 
   //  class Cell(val terrain: Terrain = Terrains.Grass,
   //             val agents: Vector[Agent] = Vector.empty[Agent])
