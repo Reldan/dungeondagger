@@ -173,6 +173,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
         stage.clear()
         tileActors.reverse foreach stage.addActor
       case(Input.Keys.W) => wobble()
+      case _ =>
     }
     processWorldEvents()
     true
