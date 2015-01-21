@@ -54,15 +54,17 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
   val frogTexture = new Texture(Gdx.files.internal("data/hexagonTiles/frog.png"))
+  val frogDeadTexture = new Texture(Gdx.files.internal("data/hexagonTiles/frog_dead.png"))
 //  val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val fishTexture = new Texture(Gdx.files.internal("data/hexagonTiles/fish.png"))
   val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
+
   val agentSprites = Map(
     AgentKind.Player -> new Sprite(personTexture),
     AgentKind.Frog -> new Sprite(frogTexture))
 
-  Gdx.graphics.setContinuousRendering(false)
+//  Gdx.graphics.setContinuousRendering(false)
   Gdx.graphics.requestRendering()
 
   val stage: Stage = new Stage()
@@ -93,6 +95,14 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
       Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
     }
 
+    private var corpseTexture:Texture = null
+    private var corpseTimer = 0
+
+    def addCorpse(texture:Texture):Unit = {
+      corpseTexture = texture
+      corpseTimer = 300
+    }
+
     override def draw(batch: Batch, alpha: Float) {
       Range(0, terrain.height + 1).foreach { i =>
         batch.draw(texture, getX, getY + i * 24)
@@ -101,6 +111,14 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
       decorations.foreach {
         case Decoration(tex, dx, dy, 0, 0) => batch.draw(tex, getX + dx, attrY + dy)
         case Decoration(tex, dx, dy, w, h) => batch.draw(tex, getX + dx, attrY + dy, w, h)
+      }
+
+      if(corpseTimer>0){
+        val c = batch.getColor
+        batch.setColor(c.r, c.g, c.b, corpseTimer / 300f)
+        batch.draw(corpseTexture, getX, attrY)
+        batch.setColor(c)
+        corpseTimer -= 1
       }
 
       agent map agentSprites map {
@@ -142,6 +160,11 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   }
   movePerson(0, personPos)
 
+  def showAgentsDeath(kind: AgentKind.Value, at: Int):Unit = {
+    tileActors(at).agent = None
+    tileActors(at).addCorpse(frogDeadTexture)
+  }
+
   def wobble(): Unit = {
     val center = tileActors(personPos)
     tileActors foreach { a =>
@@ -168,6 +191,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     world.step() foreach {
       case AgentMoved(a, from, to) if a == person => movePerson(from, to)
       case AgentMoved(a, from, to) => moveAgent(a.kind, from, to)
+      case AgentDied(a, at) => showAgentsDeath(a.kind, at)
       case _ =>
     }
   }

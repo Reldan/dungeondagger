@@ -6,6 +6,7 @@ import scala.util.Random
 trait Event
 
 case class AgentMoved(agent: Agent, from: Int, to: Int) extends Event
+case class AgentDied(agent: Agent, at: Int) extends Event
 
 
 case class World(height: Int = 150, width: Int = 150) {
@@ -17,6 +18,9 @@ case class World(height: Int = 150, width: Int = 150) {
   def addAgent(agent: Agent, position: Int = rand.nextInt(map.size)): Unit = {
     agentStates = new AgentState(agent, position) +: agentStates
   }
+//  def removeAgent(agent: Agent): Unit = {
+//    agentStates = agentStates filterNot agent.==
+//  }
 
   //  class Cell(val terrain: Terrain = Terrains.Grass,
   //             val agents: Vector[Agent] = Vector.empty[Agent])
@@ -76,6 +80,9 @@ case class World(height: Int = 150, width: Int = 150) {
                 s.position = nextPosition
                 AgentMoved(a, pos, nextPosition)
             }
+          case (s@AgentState(a, p), Die) =>
+            agentStates = agentStates.filterNot(s.==)
+            Some(AgentDied(a,p))
         }
     }.flatten
   }
