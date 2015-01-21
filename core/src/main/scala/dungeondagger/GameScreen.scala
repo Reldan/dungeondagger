@@ -3,7 +3,7 @@ package dungeondagger
 import com.badlogic.gdx.graphics.g2d.{Sprite, Batch}
 import com.badlogic.gdx._
 import com.badlogic.gdx.graphics.{Texture, GL20}
-import com.badlogic.gdx.math.Interpolation
+import com.badlogic.gdx.math.{Vector3, Interpolation}
 import com.badlogic.gdx.scenes.scene2d.actions.{DelayAction, SequenceAction, MoveByAction}
 import com.badlogic.gdx.scenes.scene2d.{Actor, Stage}
 
@@ -153,10 +153,17 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     newTile
   }
 
+  val CAMERA_TIMER_MAX = 15f
+  var cameraTimer = CAMERA_TIMER_MAX
+  var cameraOldPos:Vector3 = Vector3.Zero
+  var cameraNewPos:Vector3 = Vector3.Zero
+
   def movePerson(from: Int, to: Int): Unit = {
+    cameraOldPos = stage.getViewport.getCamera.position
     personPos = to
     val centerTile = moveAgent(AgentKind.Player, from, to)
-    stage.getViewport.getCamera.position.set(centerTile.getX, centerTile.getY + 35, 0)
+    cameraNewPos = new Vector3(centerTile.getX, centerTile.getY + 35, 0)
+    cameraTimer = CAMERA_TIMER_MAX
   }
   movePerson(0, personPos)
 
@@ -199,6 +206,12 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   override def render(delta: Float) {
     Gdx.gl.glClearColor(1, 1, 1, 1)
     Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
+
+    if(cameraTimer>0){
+      val p = new Vector3(cameraNewPos).sub(cameraOldPos).scl(1 - cameraTimer / CAMERA_TIMER_MAX).add(cameraOldPos)
+      stage.getViewport.getCamera.position.set(p)
+      cameraTimer -= 1
+    }
 
     stage.act(Gdx.graphics.getDeltaTime)
     stage.draw()
