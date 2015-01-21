@@ -50,23 +50,33 @@ case class World(height: Int = 150, width: Int = 150) {
     val (dx, dy) = dirToDXY(dir)
     val y = pos / width
     val x = pos % width
-    val destination = width * (y + dy) + x + dx
-    if (destination < 0 || destination >= map.size || ((x == width - 1) && dx > 0) || (canPass(pos) && !canPass(destination))) {
+    val destination = width * (y + dy) + x + dx //TODO redundand check
+    if (destination < 0 || destination >= map.size || ((x == width - 1) && dx > 0)) {
       None
     } else Some(destination)
   }
 
-  def step(): Set[Event] = {
+  def legalAction(aa:(AgentState,Action)):Boolean = { aa match { //TODO why doesn't it compile without aa match
+    case (AgentState(agent, pos), Move(obj, dir)) if obj == agent =>
+      applyDirectionToPosition(pos, dir) match {
+        case Some(destination) =>
+          (canPass(destination) || !canPass(pos)) && !agentStates.map{_.position}.contains(destination) //TODO refactor to cells usage
+        case None => false
+      }
+    case _ => true
+  }}
+
+  def step(): Seq[Event] = {
     agentStates.map {
       case s@AgentState(agent, pos) =>
-        agent.act.map { action => (s.agent, action)}.flatMap {
-          case (actor, Move(a, dir)) =>
+        agent.act.map { action => (s, action)} filter legalAction flatMap {
+          case (s@AgentState(a, p), Move(obj, dir)) =>
             applyDirectionToPosition(pos, dir).map {
               case nextPosition =>
                 s.position = nextPosition
                 AgentMoved(a, pos, nextPosition)
             }
         }
-    }.flatten.toSet
+    }.flatten
   }
 }
