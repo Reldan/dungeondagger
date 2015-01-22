@@ -44,7 +44,7 @@ case class World(height: Int = 150, width: Int = 150) {
   val dirToDXY = Map(
     0 ->(0, 1),
     1 ->(1, 0),
-    2 ->(+1, -1),
+    2 ->(1, -1),
     3 ->(0, -1),
     4 ->(-1, 0),
     5 ->(-1, 1)
@@ -60,7 +60,7 @@ case class World(height: Int = 150, width: Int = 150) {
     } else Some(destination)
   }
 
-  def legalAction(aa:(AgentState,Action)):Boolean = { aa match { //TODO why doesn't it compile without aa match
+  def legalAction(aa:(AgentState,Action)):Boolean = aa match { //TODO why doesn't it compile without aa match
     case (AgentState(agent, pos), Move(obj, dir)) if obj == agent =>
       applyDirectionToPosition(pos, dir) match {
         case Some(destination) =>
@@ -68,7 +68,7 @@ case class World(height: Int = 150, width: Int = 150) {
         case None => false
       }
     case _ => true
-  }}
+  }
 
   def step(): Seq[Event] = {
     agentStates.map {
@@ -86,4 +86,6 @@ case class World(height: Int = 150, width: Int = 150) {
         }
     }.flatten
   }
+
+  val t = step
 }

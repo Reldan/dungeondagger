@@ -31,9 +31,13 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     .map(Gdx.files.local)
     .map(new Texture(_))
 
+  val cacti = Array("Cactus_1", "Cactus_2", "Cactus_3")
+    .map(treePath)
+    .map(Gdx.files.local)
+    .map(new Texture(_))
+
   val trees = Array("Autumn_high", "Autumn_low", "Autumn_mid",
     "Blue_high", "Blue_low", "Blue_mid",
-    "Cactus_1", "Cactus_2", "Cactus_3",
     "Green_high", "Green_low", "Green_mid")
     .map(treePath)
     .map(Gdx.files.local)
@@ -59,6 +63,8 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
   val fishTexture = new Texture(Gdx.files.internal("data/hexagonTiles/fish.png"))
   val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
+  val appleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/apple.png"))
+  val bananaTexture = new Texture(Gdx.files.internal("data/hexagonTiles/banana.png"))
 
   val agentSprites = Map(
     AgentKind.Player -> new Sprite(personTexture),
@@ -75,22 +81,39 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     textures.map(_.dispose())
   }
 
+  case class Decoration(texture: Texture, dx: Int, dy: Int, w: Int, h: Int)
+
+  def generatePlants(terrain: Terrain): Seq[Plant] = {
+    val cactus = if (Plants.Cactus.canGrow(terrain) && rand.nextInt(10) == 0) Some(Plants.Cactus) else None
+    val tree = if (Plants.Tree.canGrow(terrain) && rand.nextInt(10) == 0) Some(Plants.Tree) else None
+    val flower = if (Plants.Flower.canGrow(terrain) && rand.nextInt(10) == 0) Some(Plants.Flower) else None
+    List(cactus, tree, flower).flatten
+  }
+  
+  def plantTexture(plant: Plant) = plant match {
+    case Plants.Cactus => cacti(rand.nextInt(cacti.size))
+    case Plants.Tree => trees(rand.nextInt(trees.size))
+    case Plants.Flower => flowers(rand.nextInt(flowers.size))
+  }
+
   class HexTile(texture: Texture, val terrain: Terrain) extends Actor {
-    case class Decoration(texture: Texture, dx: Int, dy: Int, w: Int, h: Int)
 
     var started = false
     var agent: Option[AgentKind.Value] = None
 
     val decorations = mutable.MutableList.empty[Decoration]
+    val plants = generatePlants(terrain)
 
-    if (terrain != Terrains.Water && rand.nextInt(10) == 0) {
-      val flowerTexture = flowers(rand.nextInt(flowers.size))
-      Decoration(flowerTexture, 35, 0, 0, 0) +=: decorations
-    } else if (terrain != Terrains.Water && rand.nextInt(15) == 0) {
-      val treeTexture = trees(rand.nextInt(trees.size))
-      Decoration(treeTexture, 35, 0, 0, 0) +=: decorations
+    if (plants.nonEmpty) {
+      plants.foreach { plant =>
+        Decoration(plantTexture(plant), 35, 0, 0, 0) +=: decorations
+      }
     } else if (terrain == Terrains.Grass && rand.nextInt(300) == 0) {
       Decoration(campfireTexture, 10, 0, 50, 50) +=: decorations
+    } else if (terrain == Terrains.Grass && rand.nextInt(20) == 0) {
+      Decoration(appleTexture, 10, 0, 50, 50) +=: decorations
+    } else if (terrain == Terrains.Sand && rand.nextInt(20) == 0) {
+      Decoration(bananaTexture, 10, 0, 50, 50) +=: decorations
     } else if (terrain == Terrains.Water && rand.nextInt(10) == 0) {
       Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
     }
