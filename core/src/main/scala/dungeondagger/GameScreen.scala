@@ -165,7 +165,61 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
 
   var tileActors = tActors
 
-  tileActors.reverse foreach stage.addActor
+  val VisibleXRadius = 14
+  val VisibleYRadius = 10
+
+  case class TilesBounds(leftX: Int, topY: Int, rightX: Int, bottomY: Int)
+
+  def visibleAreaBounds(center: Int): TilesBounds = {
+    val cy = center / w
+    val cx = center % w
+    TilesBounds(Math.max(cx - VisibleXRadius, 0), Math.min(cy + VisibleYRadius, h - 1),
+      Math.min(cx + VisibleXRadius, w - 1), Math.max(cy - VisibleYRadius, 0))
+  }
+
+  def area(bounds: TilesBounds): IndexedSeq[Int] = {
+    val TilesBounds(l, t, r, b) = bounds
+    for (y <- t to b by -1; x <- l to r) yield y * w + x
+  }
+
+  def addArea(bounds: TilesBounds): Unit = {
+    area(bounds).foreach { i => stage.addActor(tileActors(i))}
+  }
+
+  def addAreaOnTopOrLeft(bounds: TilesBounds): Unit = {
+    area(bounds).reverse.map(tileActors(_)).foreach { a =>
+      stage.addActor(a)
+      a.toBack()
+    }
+  }
+
+  def removeArea(bounds: TilesBounds): Unit = {
+    area(bounds).foreach { i => tileActors(i).remove()}
+  }
+
+  def shiftVisibleArea(from: Int, to: Int): Unit = {
+    val TilesBounds(ol, ot, or, ob) = visibleAreaBounds(from)
+    val TilesBounds(nl, nt, nr, nb) = visibleAreaBounds(to)
+    if (nl > ol)
+      removeArea(TilesBounds(ol, ot, ol, ob))
+    if (nl < ol)
+      addAreaOnTopOrLeft(TilesBounds(nl, nt, nl, nb))
+
+    if (nr < or)
+      removeArea(TilesBounds(or, ot, or, ob))
+    if (nr > or)
+      addArea(TilesBounds(nr, nt, nr, nb))
+
+    if (nb > ob)
+      removeArea(TilesBounds(ol, ob, or, ob))
+    if (nb < ob)
+      addArea(TilesBounds(nl, nb, nr, nb))
+
+    if (nt < ot)
+      removeArea(TilesBounds(ol, ot, or, ot))
+    if (nt > ot)
+      addAreaOnTopOrLeft(TilesBounds(nl, nt, nr, nt))
+  }
 
   tileActors(0).agent = Some(AgentKind.Player)
 
@@ -187,8 +241,10 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     val centerTile = moveAgent(AgentKind.Player, from, to)
     cameraNewPos = new Vector3(centerTile.getX, centerTile.getY + 35, 0)
     cameraTimer = CAMERA_TIMER_MAX
+    shiftVisibleArea(from, to)
   }
-  movePerson(0, personPos)
+  movePerson(personPos, personPos)
+  addArea(visibleAreaBounds(personPos))
 
   def showAgentsDeath(kind: AgentKind.Value, at: Int):Unit = {
     tileActors(at).agent = None
