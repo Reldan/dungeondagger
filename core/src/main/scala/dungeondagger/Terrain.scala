@@ -17,6 +17,7 @@ object Plants {
   val Flower = Plant(2, 20, 25)
 }
 
+case object Building
 
 object Terrains {
 

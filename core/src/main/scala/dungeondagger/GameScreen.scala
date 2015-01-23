@@ -20,7 +20,6 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   def treePath(treeType: String) =
     s"data/hexagonTiles/Tiles/tree$treeType.png"
 
-  println(Gdx.files.getExternalStoragePath)
   val textures = Array("Water_full", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
     .map(path)
     .map(Gdx.files.local)
@@ -65,6 +64,8 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
   val appleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/apple.png"))
   val bananaTexture = new Texture(Gdx.files.internal("data/hexagonTiles/banana.png"))
+  val buildingTexture = new Texture(Gdx.files.internal("data/buildings/PNG/stoneDoorWindowBlinds.png"))
+  val buildingRoofTexture = new Texture(Gdx.files.internal("data/buildings/PNG/stoneRoofShort.png"))
 
   val agentSprites = Map(
     AgentKind.Player -> new Sprite(personTexture),
@@ -96,7 +97,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     case Plants.Flower => flowers(rand.nextInt(flowers.size))
   }
 
-  class HexTile(texture: Texture, val terrain: Terrain) extends Actor {
+  class HexTile(texture: Texture, val terrain: Terrain, val building: Boolean) extends Actor {
 
     var started = false
     var agent: Option[AgentKind.Value] = None
@@ -104,7 +105,11 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     val decorations = mutable.MutableList.empty[Decoration]
     val plants = generatePlants(terrain)
 
-    if (plants.nonEmpty) {
+    if (building) {
+      Decoration(buildingRoofTexture, 0, 15, 65, 65) +=: decorations
+      Decoration(buildingTexture, 0, 0, 65, 65) +=: decorations
+    }
+    else if (plants.nonEmpty) {
       plants.foreach { plant =>
         Decoration(plantTexture(plant), 35, 0, 0, 0) +=: decorations
       }
@@ -117,6 +122,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     } else if (terrain == Terrains.Water && rand.nextInt(10) == 0) {
       Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
     }
+
 
     private var corpseTexture:Texture = null
     private var corpseTimer = 0
@@ -156,7 +162,7 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
       val terrain = world.map(tileId)
       val t = textures(terrain.id)
       val x = j * 65 + i * 32
-      val tile = new HexTile(t, terrain)
+      val tile = new HexTile(t, terrain, world.buildings.contains(tileId))
       tile.setPosition(x, i * 49)
       tile
     }

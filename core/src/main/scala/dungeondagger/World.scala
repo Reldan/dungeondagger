@@ -29,6 +29,9 @@ case class World(height: Int = 150, width: Int = 150) {
   val rand = new Random()
   val gen = Generator.newGen()
   var map: Array[Terrain] = generateMap
+  var buildings = Array.fill(100) {
+    rand.nextInt(height * width)
+  }.toSet
 
   def generateMap = Generator.terrain(width, height, Terrains.All.size - 1, gen).map {
     Terrains.All
