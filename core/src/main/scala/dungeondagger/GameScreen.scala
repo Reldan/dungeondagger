@@ -11,37 +11,10 @@ import scala.collection.mutable
 import scala.util.Random
 
 class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
-  def path(hexName: String) =
-    s"data/hexagonTiles/Tiles/tile$hexName.png"
 
-  def flowersPath(color: String) =
-    s"data/hexagonTiles/Tiles/flower$color.png"
 
-  def treePath(treeType: String) =
-    s"data/hexagonTiles/Tiles/tree$treeType.png"
+//  println(Gdx.files.getExternalStoragePath)
 
-  println(Gdx.files.getExternalStoragePath)
-  val textures = Array("Water_full", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
-    .map(path)
-    .map(Gdx.files.local)
-    .map(new Texture(_))
-
-  val flowers = Array("Blue", "Red", "Green", "Red", "White", "Yellow")
-    .map(flowersPath)
-    .map(Gdx.files.local)
-    .map(new Texture(_))
-
-  val cacti = Array("Cactus_1", "Cactus_2", "Cactus_3")
-    .map(treePath)
-    .map(Gdx.files.local)
-    .map(new Texture(_))
-
-  val trees = Array("Autumn_high", "Autumn_low", "Autumn_mid",
-    "Blue_high", "Blue_low", "Blue_mid",
-    "Green_high", "Green_low", "Green_mid")
-    .map(treePath)
-    .map(Gdx.files.local)
-    .map(new Texture(_))
 
 
   Gdx.input.setInputProcessor(this)
@@ -78,45 +51,44 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   override def dispose() {
     stage.dispose()
     personTexture.dispose()
-    textures.map(_.dispose())
+    TextureForge.disposeTextures()
   }
 
   case class Decoration(texture: Texture, dx: Int, dy: Int, w: Int, h: Int)
 
-  def generatePlants(terrain: Terrain): Seq[Plant] = {
-    val cactus = if (Plants.Cactus.canGrow(terrain) && rand.nextInt(10) == 0) Some(Plants.Cactus) else None
-    val tree = if (Plants.Tree.canGrow(terrain) && rand.nextInt(10) == 0) Some(Plants.Tree) else None
-    val flower = if (Plants.Flower.canGrow(terrain) && rand.nextInt(10) == 0) Some(Plants.Flower) else None
-    List(cactus, tree, flower).flatten
-  }
-  
-  def plantTexture(plant: Plant) = plant match {
-    case Plants.Cactus => cacti(rand.nextInt(cacti.size))
-    case Plants.Tree => trees(rand.nextInt(trees.size))
-    case Plants.Flower => flowers(rand.nextInt(flowers.size))
-  }
 
-  class HexTile(texture: Texture, val terrain: Terrain) extends Actor {
+
+  class HexTile(val terrain: Terrain) extends Actor {
+    val tts = TextureForge.tilesTextures(terrain)
+    val numberOfPlants = Math.min(tts.size - 1, rand.nextInt(20) match {
+      case n if n < 15 => 0
+      case n if n < 17 => 1
+      case n if n < 19 => 2
+      case _ => 3 })
+    val variations = tts(numberOfPlants)
+    val vn = rand.nextInt(variations.size)
+    val emptyTexture = tts(0)(0)
+    val decoratedTexture = variations(vn)
 
     var started = false
     var agent: Option[AgentKind.Value] = None
 
     val decorations = mutable.MutableList.empty[Decoration]
-    val plants = generatePlants(terrain)
-
-    if (plants.nonEmpty) {
-      plants.foreach { plant =>
-        Decoration(plantTexture(plant), 35, 0, 0, 0) +=: decorations
-      }
-    } else if (terrain == Terrains.Grass && rand.nextInt(300) == 0) {
-      Decoration(campfireTexture, 10, 0, 50, 50) +=: decorations
-    } else if (terrain == Terrains.Grass && rand.nextInt(20) == 0) {
-      Decoration(appleTexture, 10, 0, 50, 50) +=: decorations
-    } else if (terrain == Terrains.Sand && rand.nextInt(20) == 0) {
-      Decoration(bananaTexture, 10, 0, 50, 50) +=: decorations
-    } else if (terrain == Terrains.Water && rand.nextInt(10) == 0) {
-      Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
-    }
+//    val plants = generatePlants(terrain)
+//
+//    if (plants.nonEmpty) {
+//      plants.foreach { plant =>
+//        Decoration(plantTexture(plant), 35, 0, 0, 0) +=: decorations
+//      }
+//    } else if (terrain == Terrains.Grass && rand.nextInt(300) == 0) {
+//      Decoration(campfireTexture, 10, 0, 50, 50) +=: decorations
+//    } else if (terrain == Terrains.Grass && rand.nextInt(20) == 0) {
+//      Decoration(appleTexture, 10, 0, 50, 50) +=: decorations
+//    } else if (terrain == Terrains.Sand && rand.nextInt(20) == 0) {
+//      Decoration(bananaTexture, 10, 0, 50, 50) +=: decorations
+//    } else if (terrain == Terrains.Water && rand.nextInt(10) == 0) {
+//      Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
+//    }
 
     private var corpseTexture:Texture = null
     private var corpseTimer = 0
@@ -127,14 +99,15 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     }
 
     override def draw(batch: Batch, alpha: Float) {
-      Range(0, terrain.height + 1).foreach { i =>
-        batch.draw(texture, getX, getY + i * 24)
-      }
+//      Range(0, terrain.height).foreach { i =>
+//        batch.draw(emptyTexture, getX, getY + i * 24)
+//      }
+      batch.draw(decoratedTexture, getX, getY)// + terrain.height * 24)
       val attrY = getY + terrain.height * 24 + 35
-      decorations.foreach {
-        case Decoration(tex, dx, dy, 0, 0) => batch.draw(tex, getX + dx, attrY + dy)
-        case Decoration(tex, dx, dy, w, h) => batch.draw(tex, getX + dx, attrY + dy, w, h)
-      }
+//      decorations.foreach {
+//        case Decoration(tex, dx, dy, 0, 0) => batch.draw(tex, getX + dx, attrY + dy)
+//        case Decoration(tex, dx, dy, w, h) => batch.draw(tex, getX + dx, attrY + dy, w, h)
+//      }
 
       if(corpseTimer>0){
         val c = batch.getColor
@@ -154,10 +127,10 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
     Range(0, h).map { j =>
       val tileId = i * w + j
       val terrain = world.map(tileId)
-      val t = textures(terrain.id)
+      val t = TextureForge.tiles(terrain.id)
       val x = j * 65 + i * 32
-      val tile = new HexTile(t, terrain)
-      tile.setPosition(x, i * 49)
+      val tile = new HexTile(terrain)
+      tile.setPosition(x, i * 45)
       tile
     }
   }.flatten
