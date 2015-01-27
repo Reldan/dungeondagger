@@ -8,5 +8,7 @@ object Main extends App {
   cfg.height = 800
   cfg.width = 1200
   cfg.forceExit = true
-  new LwjglApplication(new DungeonDagger, cfg)
+  new LwjglApplication(new DungeonDagger {
+    override val AssetsPath = "android/assets/data"
+  }, cfg)
 }
