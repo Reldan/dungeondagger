@@ -10,36 +10,36 @@ import com.badlogic.gdx.scenes.scene2d.{Actor, Stage}
 import scala.collection.mutable
 import scala.util.Random
 
-class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
+class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProcessor {
   def path(hexName: String) =
-    s"data/hexagonTiles/Tiles/tile$hexName.png"
+    s"${game.AssetsPath}/hexagonTiles/Tiles/tile$hexName.png"
 
   def flowersPath(color: String) =
-    s"data/hexagonTiles/Tiles/flower$color.png"
+    s"${game.AssetsPath}/hexagonTiles/Tiles/flower$color.png"
 
   def treePath(treeType: String) =
-    s"data/hexagonTiles/Tiles/tree$treeType.png"
+    s"${game.AssetsPath}/hexagonTiles/Tiles/tree$treeType.png"
 
   val textures = Array("Water_full", "Sand", "Dirt", "Grass", "Autumn", "Lava", "Magic", "Rock", "Stone")
     .map(path)
-    .map(Gdx.files.local)
+    .map(Gdx.files.internal)
     .map(new Texture(_))
 
   val flowers = Array("Blue", "Red", "Green", "Red", "White", "Yellow")
     .map(flowersPath)
-    .map(Gdx.files.local)
+    .map(Gdx.files.internal)
     .map(new Texture(_))
 
   val cacti = Array("Cactus_1", "Cactus_2", "Cactus_3")
     .map(treePath)
-    .map(Gdx.files.local)
+    .map(Gdx.files.internal)
     .map(new Texture(_))
 
   val trees = Array("Autumn_high", "Autumn_low", "Autumn_mid",
     "Blue_high", "Blue_low", "Blue_mid",
     "Green_high", "Green_low", "Green_mid")
     .map(treePath)
-    .map(Gdx.files.local)
+    .map(Gdx.files.internal)
     .map(new Texture(_))
 
 
@@ -55,17 +55,17 @@ class GameScreen(game: Game) extends DefaultScreen(game) with InputProcessor {
   world.addAgent(person, personPos)
   (0 to 500).foreach { _ => world.addAgent(new RandomFrogAgent(world))}
 
-  val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/Tiles/alienPink.png"))
-  val frogTexture = new Texture(Gdx.files.internal("data/hexagonTiles/frog.png"))
-  val frogDeadTexture = new Texture(Gdx.files.internal("data/hexagonTiles/frog_dead.png"))
-//  val personTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
-  val castleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/village.gif"))
-  val fishTexture = new Texture(Gdx.files.internal("data/hexagonTiles/fish.png"))
-  val campfireTexture = new Texture(Gdx.files.internal("data/hexagonTiles/campfire.png"))
-  val appleTexture = new Texture(Gdx.files.internal("data/hexagonTiles/apple.png"))
-  val bananaTexture = new Texture(Gdx.files.internal("data/hexagonTiles/banana.png"))
-  val buildingTexture = new Texture(Gdx.files.internal("data/buildings/PNG/stoneDoorWindowBlinds.png"))
-  val buildingRoofTexture = new Texture(Gdx.files.internal("data/buildings/PNG/stoneRoofShort.png"))
+  val personTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/Tiles/alienPink.png"))
+  val frogTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/frog.png"))
+  val frogDeadTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/frog_dead.png"))
+//  val personTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/village.gif"))
+  val castleTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/village.gif"))
+  val fishTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/fish.png"))
+  val campfireTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/campfire.png"))
+  val appleTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/apple.png"))
+  val bananaTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/banana.png"))
+  val buildingTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/buildings/PNG/stoneDoorWindowBlinds.png"))
+  val buildingRoofTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/buildings/PNG/stoneRoofShort.png"))
 
   val agentSprites = Map(
     AgentKind.Player -> new Sprite(personTexture),
