@@ -53,7 +53,8 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   def w = world.width
   def h = world.height
   world.addAgent(person, personPos)
-  (0 to 500).foreach { _ => world.addAgent(new RandomFrogAgent)}
+  (0 to 50).foreach { _ => world.addAgent(new RandomFrogAgent)}
+  (0 to 300).foreach { _ => world.addAgent(new GetAwayFrogReflexAgent())}
 
   val personTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/Tiles/alienPink.png"))
   val frogTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/frog.png"))
@@ -71,7 +72,7 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   def agentTexture(a:Agent):Texture = {
     a match {
       case _:PlayerAgent => personTexture
-      case _:RandomFrogAgent => frogTexture
+      case _:RandomFrogAgent | _:GetAwayFrogReflexAgent => frogTexture
       case _ => grassTexture
     }
   }
