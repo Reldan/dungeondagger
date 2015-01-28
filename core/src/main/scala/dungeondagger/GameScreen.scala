@@ -53,11 +53,12 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   def w = world.width
   def h = world.height
   world.addAgent(person, personPos)
-  (0 to 500).foreach { _ => world.addAgent(new RandomFrogAgent(world))}
+  (0 to 500).foreach { _ => world.addAgent(new RandomFrogAgent)}
 
   val personTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/Tiles/alienPink.png"))
   val frogTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/frog.png"))
   val frogDeadTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/frog_dead.png"))
+  val grassTexture =  new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/Tiles/bushGrass.png"))
 //  val personTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/village.gif"))
   val castleTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/village.gif"))
   val fishTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/hexagonTiles/fish.png"))
@@ -67,9 +68,13 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   val buildingTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/buildings/PNG/stoneDoorWindowBlinds.png"))
   val buildingRoofTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/buildings/PNG/stoneRoofShort.png"))
 
-  val agentSprites = Map(
-    AgentKind.Player -> new Sprite(personTexture),
-    AgentKind.Frog -> new Sprite(frogTexture))
+  def agentTexture(a:Agent):Texture = {
+    a match {
+      case _:PlayerAgent => personTexture
+      case _:RandomFrogAgent => frogTexture
+      case _ => grassTexture
+    }
+  }
 
 //  Gdx.graphics.setContinuousRendering(false)
   Gdx.graphics.requestRendering()
@@ -79,7 +84,7 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   override def dispose() {
     stage.dispose()
     personTexture.dispose()
-    textures.map(_.dispose())
+    textures.foreach(_.dispose())
   }
 
   case class Decoration(texture: Texture, dx: Int, dy: Int, w: Int, h: Int)
@@ -97,13 +102,13 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
     case Plants.Flower => flowers(rand.nextInt(flowers.size))
   }
 
-  class HexTile(texture: Texture, val terrain: Terrain, val building: Boolean) extends Actor {
-
+  class HexTile(val worldCell: World.Cell, val building: Boolean) extends Actor {
+    val texture = textures(worldCell.terrain.id)
     var started = false
-    var agent: Option[AgentKind.Value] = None
+    var agent: Option[Agent] = None //TODO consider just showing agents from worldCell, but what about animation then?
 
     val decorations = mutable.MutableList.empty[Decoration]
-    val plants = generatePlants(terrain)
+    val plants = generatePlants(worldCell.terrain)
 
     if (building) {
       Decoration(buildingRoofTexture, 0, 15, 65, 65) +=: decorations
@@ -113,13 +118,13 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
       plants.foreach { plant =>
         Decoration(plantTexture(plant), 35, 0, 0, 0) +=: decorations
       }
-    } else if (terrain == Terrains.Grass && rand.nextInt(300) == 0) {
+    } else if (worldCell.terrain == Terrains.Grass && rand.nextInt(300) == 0) {
       Decoration(campfireTexture, 10, 0, 50, 50) +=: decorations
-    } else if (terrain == Terrains.Grass && rand.nextInt(20) == 0) {
+    } else if (worldCell.terrain == Terrains.Grass && rand.nextInt(20) == 0) {
       Decoration(appleTexture, 10, 0, 50, 50) +=: decorations
-    } else if (terrain == Terrains.Sand && rand.nextInt(20) == 0) {
+    } else if (worldCell.terrain == Terrains.Sand && rand.nextInt(20) == 0) {
       Decoration(bananaTexture, 10, 0, 50, 50) +=: decorations
-    } else if (terrain == Terrains.Water && rand.nextInt(10) == 0) {
+    } else if (worldCell.terrain == Terrains.Water && rand.nextInt(10) == 0) {
       Decoration(fishTexture, 10, 0, 40, 40) +=: decorations
     }
 
@@ -133,10 +138,10 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
     }
 
     override def draw(batch: Batch, alpha: Float) {
-      Range(0, terrain.height + 1).foreach { i =>
+      Range(0, worldCell.terrain.height + 1).foreach { i =>
         batch.draw(texture, getX, getY + i * 24)
       }
-      val attrY = getY + terrain.height * 24 + 35
+      val attrY = getY + worldCell.terrain.height * 24 + 35
       decorations.foreach {
         case Decoration(tex, dx, dy, 0, 0) => batch.draw(tex, getX + dx, attrY + dy)
         case Decoration(tex, dx, dy, w, h) => batch.draw(tex, getX + dx, attrY + dy, w, h)
@@ -150,7 +155,7 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
         corpseTimer -= 1
       }
 
-      agent map agentSprites map {
+      agent map agentTexture foreach {
         batch.draw(_, getX, attrY)
       }
     }
@@ -159,11 +164,10 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   def tActors = Range(0, w).map { i =>
     Range(0, h).map { j =>
       val tileId = i * w + j
-      val terrain = world.map(tileId)
-      val t = textures(terrain.id)
-      val x = j * 65 + i * 32
-      val tile = new HexTile(t, terrain, world.buildings.contains(tileId))
-      tile.setPosition(x, i * 49)
+      val x:Float = j * 65f + i * 32f
+      val y:Float = i * 49f
+      val tile = new HexTile(world.map(tileId), world.buildings.contains(tileId))
+      tile.setPosition(x, y)
       tile
     }
   }.flatten
@@ -227,12 +231,12 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
       addAreaOnTopOrLeft(TilesBounds(nl, nt, nr, nt))
   }
 
-  tileActors(0).agent = Some(AgentKind.Player)
+  tileActors(0).agent = Some(person)
 
-  def moveAgent(kind: AgentKind.Value, from: Int, to: Int): Actor = {
+  def moveAgent(a:Agent, from: Int, to: Int): Actor = {
     tileActors(from).agent = None
     val newTile = tileActors(to)
-    newTile.agent = Some(kind)
+    newTile.agent = Some(a)
     newTile
   }
 
@@ -244,7 +248,7 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   def movePerson(from: Int, to: Int): Unit = {
     cameraOldPos = stage.getViewport.getCamera.position
     personPos = to
-    val centerTile = moveAgent(AgentKind.Player, from, to)
+    val centerTile = moveAgent(person, from, to)
     cameraNewPos = new Vector3(centerTile.getX, centerTile.getY + 35, 0)
     cameraTimer = CAMERA_TIMER_MAX
     shiftVisibleArea(from, to)
@@ -252,7 +256,7 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
   movePerson(personPos, personPos)
   addArea(visibleAreaBounds(personPos))
 
-  def showAgentsDeath(kind: AgentKind.Value, at: Int):Unit = {
+  def showAgentsDeath(a: Agent, at: Int):Unit = {
     tileActors(at).agent = None
     tileActors(at).addCorpse(frogDeadTexture)
   }
@@ -281,9 +285,9 @@ class GameScreen(game: DungeonDagger) extends DefaultScreen(game) with InputProc
 
   def processWorldEvents(): Unit = {
     world.step() foreach {
-      case AgentMoved(a, from, to) if a == person => movePerson(from, to)
-      case AgentMoved(a, from, to) => moveAgent(a.kind, from, to)
-      case AgentDied(a, at) => showAgentsDeath(a.kind, at)
+      case AgentMoved(a:PlayerAgent, from, to) => movePerson(from, to)
+      case AgentMoved(a, from, to) => moveAgent(a, from, to)
+      case AgentDied(a, at) => showAgentsDeath(a, at)
       case _ =>
     }
   }

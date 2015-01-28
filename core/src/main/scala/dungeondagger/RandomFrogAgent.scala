@@ -1,10 +1,10 @@
 package dungeondagger
 
-class RandomFrogAgent(world: World) extends Agent(AgentKind.Frog){
+class RandomFrogAgent extends Agent(AgentNiche.Front){
   override def act: Option[Action] = {
-    if(world.rand.nextBoolean()){
-      Some(Move(this, world.rand.nextInt(6).toByte))
-    } else if(world.rand.nextInt(100) == 0){
+    if(World.rand.nextBoolean()){
+      Some(Move(this, World.rand.nextInt(6).toByte))
+    } else if(World.rand.nextInt(100) == 0){
       Some(Die)
     } else None
   }

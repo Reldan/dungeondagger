@@ -15,34 +15,29 @@ case class World(height: Int = 150, width: Int = 150) {
 
   var agentStates = Vector.empty[AgentState]
 
-  def addAgent(agent: Agent, position: Int = rand.nextInt(map.size)): Unit = {
+  def addAgent(agent: Agent, position: Int = World.rand.nextInt(map.size)): Unit = {
     agentStates = new AgentState(agent, position) +: agentStates
   }
 //  def removeAgent(agent: Agent): Unit = {
 //    agentStates = agentStates filterNot agent.==
 //  }
 
-  //  class Cell(val terrain: Terrain = Terrains.Grass,
-  //             val agents: Vector[Agent] = Vector.empty[Agent])
-
-
-  val rand = new Random()
   val gen = Generator.newGen()
-  var map: Array[Terrain] = generateMap
+  var map: Array[World.Cell] = generateMap
   var buildings = Array.fill(100) {
-    rand.nextInt(height * width)
+    World.rand.nextInt(height * width)
   }.toSet
 
-  def generateMap = Generator.terrain(width, height, Terrains.All.size - 1, gen).map {
-    Terrains.All
-  }
+  def generateMap = Generator.terrain(width, height, Terrains.All.size - 1, gen).
+    map(Terrains.All).
+    map{World.Cell(_)}
 
   def regenerateMap() = {
-    gen.setSeed(rand.nextInt(1000))
+    gen.setSeed(World.rand.nextInt(1000))
     map = generateMap
   }
 
-  def canPass(newPosition: Int) = map(newPosition).passThrough
+  def canPass(newPosition: Int) = map(newPosition).terrain.passThrough
 
   val dirToDXY = Map(
     0 ->(0, 1),
@@ -63,32 +58,42 @@ case class World(height: Int = 150, width: Int = 150) {
     } else Some(destination)
   }
 
-  def legalAction(aa:(AgentState,Action)):Boolean = aa match { //TODO why doesn't it compile without aa match
+  def legalAction(aa:(AgentState,Action)):Boolean = aa match {
     case (AgentState(agent, pos), Move(obj, dir)) if obj == agent =>
       applyDirectionToPosition(pos, dir) match {
         case Some(destination) =>
-          (canPass(destination) || !canPass(pos)) && !agentStates.map{_.position}.contains(destination) //TODO refactor to cells usage
+          (canPass(destination) || !canPass(pos)) && map(destination).agents.isEmpty
         case None => false
       }
     case _ => true
   }
 
-  def step(): Seq[Event] = {
-    agentStates.map {
-      case s@AgentState(agent, pos) =>
-        agent.act.map { action => (s, action)} filter legalAction flatMap {
-          case (s@AgentState(a, p), Move(obj, dir)) =>
-            applyDirectionToPosition(pos, dir).map {
-              case nextPosition =>
-                s.position = nextPosition
-                AgentMoved(a, pos, nextPosition)
-            }
-          case (s@AgentState(a, p), Die) =>
-            agentStates = agentStates.filterNot(s.==)
-            Some(AgentDied(a,p))
+  def processAction(aa:(AgentState,Action)):Option[Event] = aa match {
+    case (state@AgentState(agent, position), Move(obj, dir)) =>
+      if(legalAction(aa)){ //TODO Checking again if moving there is still legal. Bollocks.
+        applyDirectionToPosition(position, dir).map { nextPosition =>
+          state.position = nextPosition
+          map(position).agents = Vector.empty[Agent]
+          map(nextPosition).agents = Vector(agent)
+          AgentMoved(agent, position, nextPosition)
         }
-    }.flatten
+      } else None
+    case (state@AgentState(agent, position), Die) =>
+      agentStates = agentStates filterNot state.==
+      Some(AgentDied(agent, position))
   }
 
-  val t = step
+  def step(): Iterable[Event] = {
+    val agentsAndActions = agentStates.map{
+      case state@AgentState(agent, _) =>
+        agent.act.map{action => (state, action)}
+    }.flatten
+
+    agentsAndActions filter legalAction flatMap processAction
+  }
+}
+
+object World{
+  case class Cell(terrain: Terrain, var agents: Vector[Agent] = Vector.empty[Agent])
+  val rand = new Random()
 }
