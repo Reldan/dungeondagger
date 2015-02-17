@@ -1,6 +1,7 @@
 package dungeondagger
 
 import com.badlogic.gdx.backends.lwjgl.{LwjglApplication, LwjglApplicationConfiguration}
+import dungeondagger.life.Life
 
 object Main extends App {
   val cfg = new LwjglApplicationConfiguration
@@ -8,7 +9,7 @@ object Main extends App {
   cfg.height = 800
   cfg.width = 1200
   cfg.forceExit = true
-  new LwjglApplication(new DungeonDagger {
+  new LwjglApplication(new Life {
     override val AssetsPath = "android/assets/data"
   }, cfg)
 }

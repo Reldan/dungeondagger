@@ -122,18 +122,24 @@ object LibgdxBuild extends Build {
     settings = Settings.core
   )
 
+  lazy val life = Project(
+    id = "life",
+    base = file("life"),
+    settings = Settings.core
+  )
+
   lazy val desktop = Project(
     id = "desktop",
     base = file("desktop"),
     settings = Settings.desktop
-  ).dependsOn(core)
+  ).dependsOn(core, life)
 
-  lazy val android = Project(
-    id = "android",
-    base = file("android"),
-    settings = Settings.android
-  ).dependsOn(core)
-
+//  lazy val android = Project(
+//    id = "android",
+//    base = file("android"),
+//    settings = Settings.android
+//  ).dependsOn(core)
+//
   lazy val all = Project(
     id = "all-platforms",
     base = file("."),
