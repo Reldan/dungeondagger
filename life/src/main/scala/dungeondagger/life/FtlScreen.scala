@@ -12,9 +12,11 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
   val deckTexture   = new Texture(Gdx.files.internal(s"${game.AssetsPath}/deck.png"))
   val boardTexture  = new Texture(Gdx.files.internal(s"${game.AssetsPath}/board.png"))
   val pirateTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/pirate.png"))
+  val whitePirateTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/whitePirate.png"))
   val ladderTexture = new Texture(Gdx.files.internal(s"${game.AssetsPath}/ladder.png"))
 
   val pirateTextureRegion = new TextureRegion(pirateTexture)
+  val whitePirateTextureRegion = new TextureRegion(whitePirateTexture)
 
   Gdx.input.setInputProcessor(this)
   val PixelSize = 32
@@ -40,14 +42,15 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
   def drawPixel(texture: Texture, x: Int, y: Int, x0: Int, y0: Int) =
     spriteBatch.draw(texture, (x + x0) * PixelSize, (ScreenHeight - 1 - y - y0) * PixelSize, PixelSize, PixelSize)
 
-  def drawText(str: String, x: Int, y: Int, x0: Int, y0: Int) = {
+  def drawText(str: String, x: Int, y: Int, x0: Int, y0: Int, center: Boolean = false) = {
     val font = new BitmapFont()
     font.setColor(1, 0, 0, 1)
     font.setScale(2)
+    val dx = if (center) - str.size / 4 else 0
 
-
-    font.draw(spriteBatch, str, (x + x0 - str.size / 4) * PixelSize, (ScreenHeight - y - y0) * PixelSize)
+    font.draw(spriteBatch, str, (x + x0 + dx) * PixelSize, (ScreenHeight - y - y0) * PixelSize)
   }
+
 
   def drawShip(ship: Ship, x0: Int, y0: Int) = {
 
@@ -74,27 +77,38 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
       y += 1
     }
 
-    ship.pirates.foreach(p => drawPixel(pirateTextureRegion, p.x, p.y, x0, y0, p.front))
-    ship.captain.foreach(p => drawPixel(pirateTextureRegion, p.x, p.y, x0, y0, p.front))
+    ship.pirates.foreach(p     => drawPixel(pirateTextureRegion, p.x, p.y, x0, y0, p.front))
+    ship.captain.foreach(p     => drawPixel(pirateTextureRegion, p.x, p.y, x0, y0, p.front))
+    ship.whitePirate.foreach(p => drawPixel(whitePirateTextureRegion, p.x, p.y, x0, y0, p.front))
     ship.firingCannons.foreach {
-      case(x, y, _) => drawText("Boom!", x, y, x0, y0)
+      case(x, y, _) => drawText("Boom!", x, y, x0, y0, true)
     }
   }
 
 
   def drawShipWindow(ship: Ship, x0: Int, y0: Int, width: Int, height: Int): Unit = {
-    var i = 0
-    var j = 0
+    drawFrame(x0, y0, width, height)
+
+    var i = 1
+    var j = 1
 
     while (i < height) {
-      j = 0
+      j = 1
       while (j < width) {
         drawPixel(waterTexture, j, i, x0, y0)
         j += 1
       }
       i += 1
     }
-    i = 0
+
+    drawShip(ship, x0 + width / 2 - ship.width / 2 + 1,
+             y0 + height / 2 - ship.height / 2)
+    ship.movePirates()
+  }
+
+  def drawFrame(x0: Int, y0: Int, width: Int, height: Int): Unit = {
+    var i = 0
+
     while (i <= width) {
       drawPixel(boardTexture, i, 0, x0, y0)
       drawPixel(boardTexture, i, height, x0, y0)
@@ -108,21 +122,24 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
       drawPixel(boardTexture, width, i, x0, y0)
       i += 1
     }
-
-
-    drawShip(ship, x0 + width / 2 - ship.width / 2 + 1,
-             y0 + height / 2 - ship.height / 2)
-    ship.movePirates
   }
 
+  def drawTextFrame(str: List[String], x0: Int, y0: Int, width: Int, height: Int) = {
+    drawFrame(x0, y0, width, height)
+    str.zipWithIndex.foreach {
+      case(a, i) => drawText(a, 1, i + 1, x0, y0)
+    }
+  }
 
   override def render(delta: Float): Unit = {
     Gdx.gl.glClearColor(1, 1, 1, 1)
     Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT)
 
     spriteBatch.begin()
-    drawShipWindow(game.caravel, 0, 0, 27, 10)
-    drawShipWindow(game.ship, 0, 11, 27, 10)
+    drawShipWindow(game.caravel, 0, 0, 37, 19)
+    drawTextFrame(List("Greetings, sir!",
+      "Try our cannons and hatch.", "Press space, argggh!!!"), 0, 20, 37, 4)
+//    drawShipWindow(game.ship, 0, 11, 27, 10)
     spriteBatch.end()
 
   }
@@ -143,7 +160,6 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
     keycode match {
     case (Input.Keys.ESCAPE) => System.exit(0)
     case (Input.Keys.SPACE) => game.caravel.action()
-      println("space")
     case (Input.Keys.UP) => game.caravel.moveCaptain('U')
     case (Input.Keys.DOWN) => game.caravel.moveCaptain('D')
     case (Input.Keys.RIGHT) => game.caravel.moveCaptain('R')

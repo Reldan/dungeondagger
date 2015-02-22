@@ -12,6 +12,7 @@ trait Ship {
   def height: Int = rooms(0).size
   var pirates: List[Pirate]
   var captain: Option[Pirate]
+  var whitePirate: Option[Pirate]
 
   def deckCount = roomsStr.size
   var activeDeck: Int
@@ -65,17 +66,6 @@ trait Ship {
 class Caravel extends Ship {
   val roomsStr = Array(
     Array(
-      "WWWWWWWWWWWWWXXXXXWWWWWWWW",
-      "WWWWWWWWX^X^X00000XXXWWWWW",
-      "WWXXXXXX0000000000000XXWWW",
-      "WX0000000000000XX000000XWW",
-      "XX0000000X000L0XX000000XXX",
-      "WX0000000000000XX000000XWW",
-      "WWXXXXXX0000000000000XXWWW",
-      "WWWWWWWWXvXvX00000XXXWWWWW",
-      "WWWWWWWWWWWWWXXXXXWWWWWWWW"
-    ),
-    Array(
       "WWWWWWWWWWWWWWWWWWWWWWWWWW",
       "WWWWWWWWWWWWWXXXXXWWWWWWWW",
       "WWWWWWWWXXXXX00000XXXWWWWW",
@@ -85,12 +75,25 @@ class Caravel extends Ship {
       "WWWWWWWWXXXXX00000XXXWWWWW",
       "WWWWWWWWWWWWWXXXXXWWWWWWWW",
       "WWWWWWWWWWWWWWWWWWWWWWWWWW"
+    ),
+    Array(
+      "WWWWWWWWWWWWWXXXXXWWWWWWWW",
+      "WWWWWWWWX^X^X00000XXXWWWWW",
+      "WWXXXXXX0000000000000XXWWW",
+      "WX0000000000000XX000000XWW",
+      "XX0000000X000L0XX000000XXX",
+      "WX0000000000000XX000000XWW",
+      "WWXXXXXX0000000000000XXWWW",
+      "WWWWWWWWXvXvX00000XXXWWWWW",
+      "WWWWWWWWWWWWWXXXXXWWWWWWWW"
     )
   )
 
   var activeDeck = deckCount - 1
 
   var captain: Option[Pirate] = Some(new Pirate(5, 4, 'U'))
+
+  var whitePirate: Option[Pirate] = Some(new Pirate(21, 4, 'L'))
 
   var pirates: List[Pirate] = List.empty
 }
@@ -105,6 +108,8 @@ class Boat extends Ship {
   var activeDeck = deckCount - 1
 
   var captain: Option[Pirate] = None
+
+  var whitePirate: Option[Pirate] = None
 
   var pirates: List[Pirate] = List(new Pirate(1, 1, 'U'))
 }
