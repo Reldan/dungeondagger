@@ -1,6 +1,6 @@
 package dungeondagger.life
 
-import com.badlogic.gdx.graphics.g2d.{TextureRegion, SpriteBatch}
+import com.badlogic.gdx.graphics.g2d.{BitmapFont, TextureRegion, SpriteBatch}
 import com.badlogic.gdx.graphics.{GL20, Texture}
 import com.badlogic.gdx.{Input, InputProcessor, Gdx, Screen}
 
@@ -40,6 +40,15 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
   def drawPixel(texture: Texture, x: Int, y: Int, x0: Int, y0: Int) =
     spriteBatch.draw(texture, (x + x0) * PixelSize, (ScreenHeight - 1 - y - y0) * PixelSize, PixelSize, PixelSize)
 
+  def drawText(str: String, x: Int, y: Int, x0: Int, y0: Int) = {
+    val font = new BitmapFont()
+    font.setColor(1, 0, 0, 1)
+    font.setScale(2)
+
+
+    font.draw(spriteBatch, str, (x + x0 - str.size / 4) * PixelSize, (ScreenHeight - y - y0) * PixelSize)
+  }
+
   def drawShip(ship: Ship, x0: Int, y0: Int) = {
 
     var y = 0
@@ -48,7 +57,7 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
     while (y < ship.height) {
       x = 0
       while (x < ship.width) {
-        ship.rooms(y)(x) match {
+        ship.rooms(ship.activeDeck)(y)(x) match {
           case 'X' => drawPixel(titleTexture, x, y, x0, y0)
           case '^' =>
             drawPixel(titleTexture, x, y, x0, y0)
@@ -67,7 +76,11 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
 
     ship.pirates.foreach(p => drawPixel(pirateTextureRegion, p.x, p.y, x0, y0, p.front))
     ship.captain.foreach(p => drawPixel(pirateTextureRegion, p.x, p.y, x0, y0, p.front))
+    ship.firingCannons.foreach {
+      case(x, y, _) => drawText("Boom!", x, y, x0, y0)
+    }
   }
+
 
   def drawShipWindow(ship: Ship, x0: Int, y0: Int, width: Int, height: Int): Unit = {
     var i = 0
@@ -100,7 +113,6 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
     drawShip(ship, x0 + width / 2 - ship.width / 2 + 1,
              y0 + height / 2 - ship.height / 2)
     ship.movePirates
-
   }
 
 
@@ -130,6 +142,8 @@ class FtlScreen(val game: FTL) extends Screen with InputProcessor {
   override def keyDown(keycode: Int): Boolean = {
     keycode match {
     case (Input.Keys.ESCAPE) => System.exit(0)
+    case (Input.Keys.SPACE) => game.caravel.action()
+      println("space")
     case (Input.Keys.UP) => game.caravel.moveCaptain('U')
     case (Input.Keys.DOWN) => game.caravel.moveCaptain('D')
     case (Input.Keys.RIGHT) => game.caravel.moveCaptain('R')
